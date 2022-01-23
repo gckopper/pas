@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/list"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha1"
@@ -18,9 +19,10 @@ import (
 	"time"
 )
 
-var cookieList = make([]*http.Cookie, 1)
+var cookieList = list.New()
 
 func main() {
+	cookieList.Init()
 	authHandler := http.HandlerFunc(authHandlerFunc)
 	http.Handle("/auth", authHandler)
 	firstHandler := http.HandlerFunc(firstHandlerFunc)
@@ -36,11 +38,13 @@ func main() {
 func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	userCookie, err := r.Cookie("SessionCookie")
 	if err == nil {
-		if len(cookieList) > 0 {
-			for i, v := range cookieList {
-				if v != nil {
-					if v.Value == userCookie.Value {
-						if time.Now().Unix() > v.Expires.Unix() {
+		if cookieList.Len() > 0 {
+			for v := cookieList.Front(); v != nil; v = v.Next() {
+				if v.Value != nil {
+					var cookie http.Cookie
+					cookie = v.Value.(http.Cookie)
+					if cookie.Value == userCookie.Value {
+						if time.Now().Unix() > cookie.Expires.Unix() {
 
 							newCookie := http.Cookie{
 								Secure: true,
@@ -48,9 +52,7 @@ func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 								Value:  userCookie.Value,
 								MaxAge: -1,
 							}
-							cookieList[i] = cookieList[len(cookieList)-1]
-							cookieList[len(cookieList)-1] = nil
-							cookieList = cookieList[:len(cookieList)-1]
+							cookieList.Remove(v)
 							http.SetCookie(w, &newCookie)
 						} else {
 							w.WriteHeader(200)
@@ -84,7 +86,7 @@ func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 			SameSite: http.SameSiteStrictMode,
 		}
 		http.SetCookie(w, &newCookie)
-		cookieList = append(cookieList, &newCookie)
+		cookieList.PushFront(newCookie)
 		w.WriteHeader(200)
 		return
 	} else {
