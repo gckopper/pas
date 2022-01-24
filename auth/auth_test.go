@@ -1,4 +1,4 @@
-package main
+package auth
 
 import (
 	"crypto/rand"
@@ -13,7 +13,7 @@ func TestAuth(t *testing.T) {
 }
 
 func TestTOTP(t *testing.T) {
-	fmt.Println(totp("IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY="))
+	fmt.Println(Totp("IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY="))
 }
 
 func TestRandTotpKey(t *testing.T) {
@@ -27,5 +27,5 @@ func TestRandTotpKey(t *testing.T) {
 }
 
 func TestPassword(t *testing.T) {
-	fmt.Println(hash("a", "x4d!nXZ%sxE#6&U%"))
+	fmt.Println(Hash("a", "x4d!nXZ%sxE#6&U%"))
 }
