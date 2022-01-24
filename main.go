@@ -1,13 +1,13 @@
 package main
 
 import (
-	"Server-Auth/auth"
 	"container/list"
 	"crypto/rand"
 	"encoding/base32"
 	"fmt"
 	"log"
 	"net/http"
+	"pas/auth"
 	"strconv"
 	"time"
 )

@@ -1,4 +1,4 @@
-module Server-Auth
+module pas
 
 go 1.17
 
