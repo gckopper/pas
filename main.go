@@ -3,6 +3,7 @@ package main
 import (
 	"container/list"
 	"crypto/rand"
+	"embed"
 	"encoding/base32"
 	"fmt"
 	"log"
@@ -14,12 +15,14 @@ import (
 
 var cookieList = list.New()
 
+//go:embed static
+var content embed.FS
+
 func main() {
 	cookieList.Init()
 	authHandler := http.HandlerFunc(authHandlerFunc)
 	http.Handle("/auth", authHandler)
-	firstHandler := http.HandlerFunc(firstHandlerFunc)
-	http.Handle("/", firstHandler)
+	http.Handle("/", http.StripPrefix("/", http.FileServer(http.FS(content))))
 	err := http.ListenAndServe("localhost:3000", nil)
 	if err != nil {
 		err := log.Output(0, fmt.Sprintln(err))
@@ -86,9 +89,4 @@ func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(401)
 		return
 	}
-}
-
-func firstHandlerFunc(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "./index.html")
-	return
 }
