@@ -25,7 +25,7 @@ func main() {
 	http.Handle("/", http.StripPrefix("/", http.FileServer(http.FS(content))))
 	err := http.ListenAndServe("localhost:3000", nil)
 	if err != nil {
-		err := log.Output(0, fmt.Sprintln(err))
+		err = log.Output(0, fmt.Sprintln(err))
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -69,7 +69,7 @@ func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	}
 	if auth.GetCredentials(username, password, otp) {
 		id := make([]byte, 64)
-		_, err := rand.Read(id)
+		_, err = rand.Read(id)
 		if err != nil {
 			log.Fatal(err)
 		}
