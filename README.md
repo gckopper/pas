@@ -1,3 +1,4 @@
+[![Go](https://github.com/gckopper/pas/actions/workflows/go.yml/badge.svg?branch=lists)](https://github.com/gckopper/pas/actions/workflows/go.yml)
 # PAS
 Personal Authentication Service
 
