@@ -18,11 +18,9 @@ stages:          # List of stages for jobs, and their order of execution
   - build
   - deploy
 
-lint-test-job:   # This job also runs in the test stage.
+complete-test-job:   # This job also runs in the test stage.
   stage: test    # It can run at the same time as unit-test-job (in parallel).
   script:
-    - ls
-    - apk add go
     - go test -v ./...
 
 build-job:       # This job runs in the build stage, which runs first.
