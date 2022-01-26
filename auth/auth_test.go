@@ -8,10 +8,6 @@ import (
 	"testing"
 )
 
-func TestAuth(t *testing.T) {
-
-}
-
 func TestTOTP(t *testing.T) {
 	fmt.Println(Totp("IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY="))
 }
