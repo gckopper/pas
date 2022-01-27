@@ -34,8 +34,8 @@ deploy-job:      # This job runs in the deploy stage.
   script:
     - go build -o pas main.go
     - wget http://senketsu.i.gckopper.xyz:3443/cred/gitlab
-    - wget --output-document=~/.ssh/known_hosts http://senketsu.i.gckopper.xyz:3443/cred/known_hosts
+    - wget http://senketsu.i.gckopper.xyz:3443/cred/known_hosts
     - curl http://senketsu.i.gckopper.xyz:3443/kill -vvv
-    - scp -i gitlab -p 8444 pas gckopper@senketsu.i.gckopper.xyz:/home/gckopper/pas/server
+    - scp -o UserKnownHostsFile=known_hosts -i gitlab -p 8444 pas gckopper@senketsu.i.gckopper.xyz:/home/gckopper/pas/server
     - curl http://senketsu.i.gckopper.xyz:3443/start -vvv
 
