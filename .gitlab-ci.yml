@@ -32,7 +32,7 @@ deploy-job:      # This job runs in the deploy stage.
   stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
   script:
     - go build -o pas main.go
-    - wget http://senketsu.i.gckopper.xyz:3443/id
+    - wget http://senketsu.i.gckopper.xyz:3443/cred/id
     - curl http://senketsu.i.gckopper.xyz:3443/kill -vvv
     - scp -i gitlab -p 8444 pas gckopper@senketsu.i.gckopper.xyz:/home/gckopper/pas/server
     - curl http://senketsu.i.gckopper.xyz:3443/start -vvv
