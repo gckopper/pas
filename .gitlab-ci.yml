@@ -32,5 +32,5 @@ deploy-job:      # This job runs in the deploy stage.
   stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
   script:
     >- 
-    go build -o pas main.go && curl -F "file=@pas;filename=pas" -H "hash: `cat pas | sha512sum`" http://localhost:3443
+    go build -o pas main.go && curl -F "file=@pas;filename=pas" -H "hash: `cat pas | sha512sum`" http://senketsu.i.gckopper.xyz:3443
 
