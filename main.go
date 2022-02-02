@@ -70,7 +70,8 @@ func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	// Simultaneously check if password nor username are empty, if they are bigger than
 	// 64 characters and if otp is a 6-digit number. Remember that r.Header.Get will
 	// return "" (empty string) if there is no header with such name
-	if (password == "") || (err != nil) || (username == "") || (len(otpString) != 6) || (len(username) > 64) || (len(password) > 64) {
+	if (password == "") || (err != nil) || (username == "") || (len(otpString) > 6) || (len(username) > 64) || (len(password) > 64) {
+		log.Println(username, "is password invalid?", password == "" || len(password) > 64, err, otp, otpString)
 		w.WriteHeader(403)
 		return
 	}

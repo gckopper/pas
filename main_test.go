@@ -51,26 +51,51 @@ func TestAuthTOTPMarginsBASE(t *testing.T) {
 
 // TestServer tests the authHandlerFunc directly with the provided example user
 func TestServer(t *testing.T) {
-	mockHandler := map[string][]string{ // Prepare an authentication header
-		"Username": {"user"},
-		"Password": {"a"},
-		"OTP": {fmt.Sprint(auth.Totp(
-			"IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY=",
-			uint64(time.Now().Unix()/30)))},
-	}
 	server := httptest.NewServer(http.HandlerFunc(authHandlerFunc)) // Uses a test server
 	defer server.Close()
 	request, err := http.NewRequest("GET", server.URL, nil) // Creates a request to the test server
 	if err != nil {
 		t.Fatal(err)
 	}
-	request.Header = mockHandler                 // Loads the authentication header
+	request.Header = map[string][]string{ // Prepare an authentication header
+		"Username": {"user"},
+		"Password": {"a"},
+		"OTP": {fmt.Sprint(auth.Totp(
+			"IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY=",
+			uint64(time.Now().Unix()/30)))},
+	}
 	response, err := server.Client().Do(request) // Make the request
 	if err != nil {
 		t.Fatal(err)
 	}
 	if response.StatusCode != 200 { // If the authentication fails then so does the test
 		t.Fatal(response.StatusCode)
+	}
+}
+
+func TestSampleServer(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(authHandlerFunc)) // Uses a test server
+	defer server.Close()
+	for i := 0; i < 100; i++ {
+		request, err := http.NewRequest("GET", server.URL, nil) // Creates a request to the test server
+		if err != nil {
+			t.Fatal(err)
+		}
+		request.Header = map[string][]string{ // Prepare an authentication header
+			"Username": {"user"},
+			"Password": {"a"},
+			"OTP": {fmt.Sprint(auth.Totp(
+				"IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY=",
+				uint64(time.Now().Unix()/30)))},
+		}
+		time.Sleep(2)
+		response, err := server.Client().Do(request) // Make the request
+		if err != nil {
+			t.Fatal(err)
+		}
+		if response.StatusCode != 200 { // If the authentication fails then so does the test
+			t.Fatal(response.StatusCode)
+		}
 	}
 }
 
