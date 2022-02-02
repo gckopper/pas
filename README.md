@@ -13,6 +13,7 @@ This project is supposed to provide a simple server capable of authentication fo
 ## To run
 - The latest release
 - CSV file with the user credentials
+   - (Optional) NGINX with http_auth_request_module is recommended
 
 ---
 # Usage
