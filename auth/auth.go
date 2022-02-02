@@ -38,9 +38,12 @@ func GetCredentials(username string, password string, otp int) bool {
 		if v[0] == username { // Check the username first as it requires no processing
 			// Sends the password in plaintext with the salt to be hashed and compared with our record
 			if Hash(password, v[3]) == v[1] {
-				if Totp(v[2]) == otp {
+				presentTime := time.Now().Unix()
+				margin := uint64(presentTime % 30)
+				if Totp(v[2], uint64(presentTime/30)) == otp || (margin > 27 && Totp(v[2], uint64((presentTime+5)/30)) == otp) || (margin < 3 && Totp(v[2], uint64((presentTime-5)/30)) == otp) {
 					return true
 				}
+				time.Sleep(1)
 				return false
 			} else { // Immediately return false if we got the wrong password for a valid username
 				return false
@@ -65,7 +68,7 @@ func Hash(password string, salt string) string {
 
 // Totp calculates the time-based one time password for a given secret
 // spec definition https://datatracker.ietf.org/doc/html/rfc6238
-func Totp(secretString string) int {
+func Totp(secretString string, timestamp uint64) int {
 	// Convert the string to a byte array making sure it only has upper-case letters
 	secret, err := base32.StdEncoding.DecodeString(strings.ToUpper(secretString))
 	if err != nil {
@@ -73,9 +76,9 @@ func Totp(secretString string) int {
 		return 0
 	}
 	buf := make([]byte, 8)
-	hmacResult := hmac.New(sha1.New, secret)                      // Hash the secret as HMAC SHA-1
-	binary.BigEndian.PutUint64(buf, uint64(time.Now().Unix()/30)) // Convert the time into bytes and saves it to buf
-	hmacResult.Write(buf)                                         // Adds more data to the running hash.
+	hmacResult := hmac.New(sha1.New, secret)   // Hash the secret as HMAC SHA-1
+	binary.BigEndian.PutUint64(buf, timestamp) // Convert the time into bytes and saves it to buf
+	hmacResult.Write(buf)                      // Adds more data to the running hash.
 	// Sum appends the current hash to b and returns the resulting slice.
 	// It does not change the underlying hash state.
 	// Used here to convert the hash to a byte array

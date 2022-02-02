@@ -15,7 +15,35 @@ func TestAuth(t *testing.T) {
 	if !auth.GetCredentials(
 		"user",
 		"a",
-		auth.Totp("IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY="),
+		auth.Totp(
+			"IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY=",
+			uint64(time.Now().Unix()/30)),
+	) {
+		t.Fail()
+	}
+}
+
+// TestAuth tests if the GetCredentials function working using the example user
+func TestAuthTOTPMarginsTOP(t *testing.T) {
+	if !auth.GetCredentials(
+		"user",
+		"a",
+		auth.Totp(
+			"IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY=",
+			uint64((time.Now().Unix()+1)/30)),
+	) {
+		t.Fail()
+	}
+}
+
+// TestAuth tests if the GetCredentials function working using the example user
+func TestAuthTOTPMarginsBASE(t *testing.T) {
+	if !auth.GetCredentials(
+		"user",
+		"a",
+		auth.Totp(
+			"IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY=",
+			uint64((time.Now().Unix()-1)/30)),
 	) {
 		t.Fail()
 	}
@@ -26,7 +54,9 @@ func TestServer(t *testing.T) {
 	mockHandler := map[string][]string{ // Prepare an authentication header
 		"Username": {"user"},
 		"Password": {"a"},
-		"OTP":      {fmt.Sprint(auth.Totp("IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY="))},
+		"OTP": {fmt.Sprint(auth.Totp(
+			"IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY=",
+			uint64(time.Now().Unix()/30)))},
 	}
 	server := httptest.NewServer(http.HandlerFunc(authHandlerFunc)) // Uses a test server
 	defer server.Close()
