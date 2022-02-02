@@ -70,7 +70,7 @@ func TestServer(t *testing.T) {
 		t.Fatal(err)
 	}
 	if response.StatusCode != 200 { // If the authentication fails then so does the test
-		t.Fail()
+		t.Fatal(response.StatusCode)
 	}
 }
 
