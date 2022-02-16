@@ -34,3 +34,6 @@ deploy-job:      # This job runs in the deploy stage.
   script:
     - go build -o pas main.go
     - ./pas
+  environment:
+    name: deploy
+    url: https://code.gckopper.xyz
