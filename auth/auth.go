@@ -17,7 +17,7 @@ import (
 // GetCredentials function to verify the credentials passed to it
 func GetCredentials(username string, password string, otp int) bool {
 	// A file that we open at runtime is used to allow modifications without the need to restart
-	file, err := os.Open("/secrets/users.csv") // Open the file in which the credentials are stored
+	file, err := os.Open("users.csv") // Open the file in which the credentials are stored
 	if err != nil {
 		fmt.Println(err)
 		return false
