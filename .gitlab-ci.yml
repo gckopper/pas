@@ -34,7 +34,7 @@ deploy-job:      # This job runs in the deploy stage.
   script:
     - go build -o pas main.go
     - curl http://localhost:3443/stop
-    - mv pas pas/pas
+    - mv pas /pas/pas
     - curl http://localhost:3443/start
   environment:
     name: deploy
