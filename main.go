@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"embed"
 	"encoding/base32"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -22,11 +23,13 @@ var content embed.FS
 
 func main() {
 	cookieList.Init() // Initializing the list
+	port := flag.Int("p", 3000, "Port in which the updater will listen")
+	flag.Parse()
 	authHandler := http.HandlerFunc(authHandlerFunc)
 	http.Handle("/auth", authHandler)                   // Set the authHandlerFunc to handle requests under /auth
 	http.Handle("/", http.FileServer(http.FS(content))) // Set the / path to the static folder AKA login page
 	// Listen on localhost as this service should not be public
-	err := http.ListenAndServe("localhost:3000", nil)
+	err := http.ListenAndServe(fmt.Sprint("localhost:", *port), nil)
 	if err != nil {
 		err = log.Output(0, fmt.Sprintln(err))
 		if err != nil {
