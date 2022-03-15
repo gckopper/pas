@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"os"
 	"pas/auth"
 	"testing"
 	"time"
@@ -124,7 +126,6 @@ func TestSampleServer(t *testing.T) {
 			"IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY=",
 			uint64(time.Now().Unix()/30)))},
 	}
-	time.Sleep(2)
 	response, err := server.Client().Do(request) // Make the request
 	if err != nil {
 		t.Fatal(err)
@@ -181,4 +182,63 @@ func TestServerTOTPSize(t *testing.T) {
 			t.Fatal(otp)
 		}
 	}
+}
+
+func BenchmarkGetCred(b *testing.B) {
+	auth.GetCredentials("user", "a", 232)
+}
+
+func BenchmarkGetCredGo(b *testing.B) {
+	username := "user"
+	password := "a"
+	otp := 234234
+	// A file that we open at runtime is used to allow modifications without the need to restart
+	file, err := os.Open("users.csv") // Open the file in which the credentials are stored
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	reader := csv.NewReader(file) // Use the csv library to save some work
+	records, err := reader.ReadAll()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	/* The indexes are as follows:
+	 * 0 = username
+	 * 1 = salted and hashed password
+	 * 2 = otp secret
+	 * 3 = salt used in the password
+	 */
+	for _, v := range records { // Loop through the records
+		if v[0] == username { // Check the username first as it requires no processing
+			// Sends the password in plaintext with the salt to be hashed and compared with our record
+			presentTime := time.Now().Unix()
+			margin := uint64(presentTime % 30)
+			passwordHash := make(chan string)
+			TOTPCurrent := make(chan int)
+			TOTPPlus := make(chan int)
+			TOTPMinus := make(chan int)
+			go chanHash(passwordHash, password, v[3])
+			go chanTOTP(TOTPCurrent, v[2], uint64(presentTime/30))
+			go chanTOTP(TOTPPlus, v[2], uint64((presentTime+5)/30))
+			go chanTOTP(TOTPMinus, v[2], uint64((presentTime-5)/30))
+			if <-passwordHash == v[1] {
+				if <-TOTPCurrent == otp || (margin > 27 && (<-TOTPPlus == otp)) || (margin < 3 && (<-TOTPMinus == otp)) {
+					return
+				}
+				return
+			} else { // Immediately return false if we got the wrong password for a valid username
+				return
+			}
+		}
+	}
+}
+
+func chanTOTP(result chan int, secret string, timestamp uint64) {
+	result <- auth.Totp(secret, timestamp)
+}
+
+func chanHash(result chan string, password string, salt string) {
+	result <- auth.Hash(password, salt)
 }
