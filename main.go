@@ -43,8 +43,7 @@ func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 		if cookieList.Len() > 0 { // Making sure we even have a cookie to compare to
 			for v := cookieList.Front(); v != nil; v = v.Next() { // Run through the cookie list
 				if v.Value != nil { // Sanity check
-					var cookie http.Cookie
-					cookie = v.Value.(http.Cookie)        // Converts the interface into a http.Cookie type
+					cookie := v.Value.(http.Cookie)       // Converts the interface into a http.Cookie type
 					if cookie.Value == userCookie.Value { // Confirms that we got the right cookie
 						if time.Now().Unix() > cookie.Expires.Unix() { // Making sure the cookie is still edible
 							// In case that the cookie expire we send it back with MaxAge = -1 to inform the browser
