@@ -1,0 +1,83 @@
+.container {
+    position: absolute;
+    margin: 0 auto;
+    width: max-content;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.text {
+    position: relative;
+    text-align: start;
+    width: max-content;
+    margin-top: 1vh;
+
+}
+
+.button {
+    position: relative;
+    text-align: center;
+    margin-top: 1vh;
+    margin-top: 10%;
+    width: 100%;
+}
+
+button {
+    width: 100%;
+}
+
+body {
+     min-height: 100vh; 
+     margin: 0;
+}
+
+.SVG {
+    stroke-width:1;
+}
+
+.input {
+    position: relative;
+    text-align: center;
+    width: max-content;
+}
+
+svg {
+    position: absolute;
+    width: 1rem;
+    height: 1rem;
+    float: right;
+    top: 50%;
+    left: 95%;
+    transform: translate(-100%, -50%);
+}
+
+input {
+    height: 1rem;
+    margin: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: black;
+    }
+    .text {
+        color: #fff;
+    }
+    input {
+        height: 1rem;
+        margin: 0;
+        background-color: #444;
+        color: #fff;
+    }
+    .SVG {
+        stroke:white;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    /* Light theme styles go here */
+    .SVG {
+        stroke:black;
+    }
+}
