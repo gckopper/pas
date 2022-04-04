@@ -1,59 +1,62 @@
 package main
 
 import (
-	"crypto/hmac"
+	"container/list"
 	"crypto/rand"
-	"crypto/sha1"
+	"embed"
 	"encoding/base32"
-	"encoding/base64"
-	"encoding/binary"
-	"encoding/csv"
+	"flag"
 	"fmt"
-	"golang.org/x/crypto/scrypt"
 	"log"
 	"net/http"
-	"os"
+	"pas/auth"
 	"strconv"
-	"strings"
 	"time"
 )
 
-var cookieList = make([]*http.Cookie, 1)
+// Creating global cookie list for the session cookies
+var cookieList = list.New()
+
+// embedded filesystem to hold the login page related files
+//go:embed static
+var content embed.FS
 
 func main() {
+	cookieList.Init() // Initializing the list
+	port := flag.Int("p", 3000, "Port in which the updater will listen")
+	flag.Parse()
 	authHandler := http.HandlerFunc(authHandlerFunc)
-	http.Handle("/auth", authHandler)
-	firstHandler := http.HandlerFunc(firstHandlerFunc)
-	http.Handle("/", firstHandler)
-	err := http.ListenAndServe("localhost:3000", nil)
+	http.Handle("/auth", authHandler)                   // Set the authHandlerFunc to handle requests under /auth
+	http.Handle("/", http.FileServer(http.FS(content))) // Set the / path to the static folder AKA login page
+	// Listen on localhost as this service should not be public
+	err := http.ListenAndServe(fmt.Sprint("localhost:", *port), nil)
 	if err != nil {
-		err := log.Output(0, fmt.Sprintln(err))
+		err = log.Output(0, fmt.Sprintln(err))
 		if err != nil {
 			log.Fatalln(err)
 		}
 	}
 }
 func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
-	userCookie, err := r.Cookie("SessionCookie")
-	if err == nil {
-		if len(cookieList) > 0 {
-			for i, v := range cookieList {
-				if v != nil {
-					if v.Value == userCookie.Value {
-						if time.Now().Unix() > v.Expires.Unix() {
-
+	userCookie, err := r.Cookie("SessionCookie") // Try to grab the cookie named SessionCookie
+	if err == nil {                              // Will enter this if there is a cookie called SessionCookie
+		if cookieList.Len() > 0 { // Making sure we even have a cookie to compare to
+			for v := cookieList.Front(); v != nil; v = v.Next() { // Run through the cookie list
+				if v.Value != nil { // Sanity check
+					cookie := v.Value.(http.Cookie)       // Converts the interface into a http.Cookie type
+					if cookie.Value == userCookie.Value { // Confirms that we got the right cookie
+						if time.Now().Unix() > cookie.Expires.Unix() { // Making sure the cookie is still edible
+							// In case that the cookie expire we send it back with MaxAge = -1 to inform the browser
 							newCookie := http.Cookie{
 								Secure: true,
 								Name:   "SessionCookie",
 								Value:  userCookie.Value,
 								MaxAge: -1,
 							}
-							cookieList[i] = cookieList[len(cookieList)-1]
-							cookieList[len(cookieList)-1] = nil
-							cookieList = cookieList[:len(cookieList)-1]
+							cookieList.Remove(v) // Remove the expired cookie from our list
 							http.SetCookie(w, &newCookie)
 						} else {
-							w.WriteHeader(200)
+							w.WriteHeader(200) // If we have a valid unexpired cookie it's all good to go
 							return
 						}
 					}
@@ -61,17 +64,23 @@ func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	// Grab the authentication headers
 	username := r.Header.Get("Username")
 	password := r.Header.Get("Password")
-	otpstr := r.Header.Get("OTP")
-	otp, err := strconv.Atoi(otpstr)
-	if (password == "") || (err != nil) || (username == "") || (len(otpstr) != 6) || (len(username) > 64) || (len(password) > 64) {
+	otpString := r.Header.Get("OTP")
+	otp, err := strconv.Atoi(otpString) // Convert the otpString into an int
+	// Simultaneously check if password nor username are empty, if they are bigger than
+	// 64 characters and if otp is a 6-digit number. Remember that r.Header.Get will
+	// return "" (empty string) if there is no header with such name
+	if (password == "") || (err != nil) || (username == "") || (len(otpString) > 6) || (len(username) > 64) || (len(password) > 64) {
+		log.Println(username, "is password invalid?", password == "" || len(password) > 64, err, otp, otpString)
 		w.WriteHeader(403)
 		return
 	}
-	if getCredentials(username, password, otp) {
-		id := make([]byte, 64)
-		_, err := rand.Read(id)
+	// Confirm the received valid credentials
+	if auth.GetCredentials(username, password, otp) {
+		id := make([]byte, 64) // Allocate 64 bytes of memory for the id
+		_, err = rand.Read(id) // Get Random values for the id
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -80,73 +89,19 @@ func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 			Name:     "SessionCookie",
 			Value:    base32.StdEncoding.EncodeToString(id),
 			MaxAge:   14400,
-			Expires:  time.Now().Add(time.Hour * 4),
-			SameSite: http.SameSiteStrictMode,
+			Expires:  time.Now().Add(time.Hour * 4), // Give it 4 hours of life
+			SameSite: http.SameSiteStrictMode,       // Set SameSite to strict as a way of mitigating attacks
 		}
 		http.SetCookie(w, &newCookie)
-		cookieList = append(cookieList, &newCookie)
+		// Add the new cookie to the front of the list as it is very likely to be used immediately
+		// By the very nature of lists things at the end take more time to reach
+		cookieList.PushFront(newCookie)
 		w.WriteHeader(200)
 		return
 	} else {
+		// Returns Unauthorized for users with no cookie and no credentials
+		// Used by nginx to redirect the user to the login page
 		w.WriteHeader(401)
 		return
 	}
-}
-
-func firstHandlerFunc(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "./index.html")
-	return
-}
-
-func getCredentials(username string, password string, otp int) bool {
-	file, err := os.Open("users.csv")
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
-	reader := csv.NewReader(file)
-	records, err := reader.ReadAll()
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
-	for _, v := range records { // 0 = username 1 = password 2 = otp 3 = salt
-		if v[0] == username {
-			if hash(password, v[3]) == v[1] {
-				if totp(v[2]) == otp {
-					return true
-				}
-				return false
-			}
-		}
-	}
-	return false
-}
-
-func hash(password string, salt string) string {
-	key, err := scrypt.Key([]byte(password), []byte(salt), 1<<16, 8, 1, 64)
-	if err != nil {
-		fmt.Println(err)
-		return ""
-	}
-	return base64.StdEncoding.EncodeToString(key)
-}
-
-func totp(secretstr string) int {
-	secret, err := base32.StdEncoding.DecodeString(strings.ToUpper(secretstr))
-	if err != nil {
-		fmt.Println(err)
-		return 0
-	}
-	buf := make([]byte, 8)
-	hmacResult := hmac.New(sha1.New, secret)
-	binary.BigEndian.PutUint64(buf, uint64(time.Now().Unix()/30))
-	hmacResult.Write(buf)
-	toTrunc := hmacResult.Sum(nil)
-	offset := toTrunc[len(toTrunc)-1] & 0xf
-	value := int64(((int(toTrunc[offset]) & 0x7f) << 24) |
-		((int(toTrunc[offset+1] & 0xff)) << 16) |
-		((int(toTrunc[offset+2] & 0xff)) << 8) |
-		(int(toTrunc[offset+3]) & 0xff))
-	return int(value % 1000000)
 }
