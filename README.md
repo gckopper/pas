@@ -4,7 +4,10 @@ Personal Authentication Service
 
 This project is supposed to provide a simple server capable of authentication for very small userbases. Thus being only recommended protecting personal applications that are exposed to the web. The main advantage against something more scalable is its simplicity, easy of use, easy of deployment and low requirements.
 
----
+
+# Demo
+### https://pas.gck.dev.br/
+
 # Requirements
 ## To Build
 - Golang 1.17
@@ -15,7 +18,6 @@ This project is supposed to provide a simple server capable of authentication fo
 - CSV file with the user credentials
    - (Optional) NGINX with http_auth_request_module is recommended
 
----
 # Usage
 ## Building
 `git clone https://github.com/gckopper/pas` 
@@ -69,6 +71,5 @@ auth_request_set $auth_cookie $upstream_http_set_cookie;
 add_header Set-Cookie $auth_cookie;
 ```
 
----
 # LICENSE
 MIT
