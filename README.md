@@ -1,4 +1,4 @@
-[![Go](https://github.com/gckopper/pas/actions/workflows/go.yml/badge.svg?branch=lists)](https://github.com/gckopper/pas/actions/workflows/go.yml)
+[![Go](https://github.com/gckopper/pas/actions/workflows/go.yml/badge.svg?branch=dev)](https://github.com/gckopper/pas/actions/workflows/go.yml)
 # PAS
 Personal Authentication Service
 
@@ -36,7 +36,7 @@ This project is supposed to provide a simple server capable of authentication fo
    * Or run it manually
 5. Now you are ready to go! Or continue to use it with NGINX
 6. NGINX will need "http_auth_request_module" (available in the NGINX Open Source edition)
-7. Edit your NGINX config (steps 8, 9, 10 and 11) or use the template [auth.conf](https://github.com/gckopper/pas/blob/lists/auth.conf)
+7. Edit your NGINX config (steps 8, 9, 10 and 11) or use the template [auth.conf](https://github.com/gckopper/pas/blob/main/auth.conf)
    * The linux default location is /etc/nginx/sites-available
    * By default, it is a symlink of the actual config file in /etc/nginx/sites-enabled
 8. Add an internal authentication location 
