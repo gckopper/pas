@@ -7,7 +7,13 @@ This project is supposed to provide a simple server capable of authentication fo
 
 # Demo
 ### https://pas.gck.dev.br/
-
+```
+Username: user
+Password: a
+One-time secret: IL6V2C3SBR7G6HIEFJOGEZFMPLDLXO7W7E4GJILPRFBIC5HXN7NNED5IRN67LDJNCI3JLAW4RCJKR5CKSMMGT7GL4O3D3GSMSXWCLZY=
+```
+Easily calculate the TOTP:
+[Cyberchef](https://gchq.github.io/CyberChef/#recipe=From_Base32('A-Z2-7%3D',true)Generate_TOTP('',32,6,0,30)&input=SUw2VjJDM1NCUjdHNkhJRUZKT0dFWkZNUExETFhPN1c3RTRHSklMUFJGQklDNUhYTjdOTkVENUlSTjY3TERKTkNJM0pMQVc0UkNKS1I1Q0tTTU1HVDdHTDRPM0QzR1NNU1hXQ0xaWT0)
 # Requirements
 ## To Build
 - Golang 1.17
