@@ -1,7 +1,6 @@
 package main
 
 import (
-	"container/list"
 	"crypto/rand"
 	"embed"
 	"encoding/base32"
@@ -15,14 +14,13 @@ import (
 )
 
 // Creating global cookie list for the session cookies
-var cookieList = list.New()
+var cookieList = make(map[string]http.Cookie)
 
 // embedded filesystem to hold the login page related files
 //go:embed static
 var content embed.FS
 
 func main() {
-	cookieList.Init() // Initializing the list
 	port := flag.Int("p", 3000, "Port in which the updater will listen")
 	flag.Parse()
 	authHandler := http.HandlerFunc(authHandlerFunc)
@@ -39,27 +37,23 @@ func main() {
 }
 func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	userCookie, err := r.Cookie("SessionCookie") // Try to grab the cookie named SessionCookie
-	if err == nil {                              // Will enter this if there is a cookie called SessionCookie
-		if cookieList.Len() > 0 { // Making sure we even have a cookie to compare to
-			for v := cookieList.Front(); v != nil; v = v.Next() { // Run through the cookie list
-				if v.Value != nil { // Sanity check
-					cookie := v.Value.(http.Cookie)       // Converts the interface into a http.Cookie type
-					if cookie.Value == userCookie.Value { // Confirms that we got the right cookie
-						if time.Now().Unix() > cookie.Expires.Unix() { // Making sure the cookie is still edible
-							// In case that the cookie expire we send it back with MaxAge = -1 to inform the browser
-							newCookie := http.Cookie{
-								Secure: true,
-								Name:   "SessionCookie",
-								Value:  userCookie.Value,
-								MaxAge: -1,
-							}
-							cookieList.Remove(v) // Remove the expired cookie from our list
-							http.SetCookie(w, &newCookie)
-						} else {
-							w.WriteHeader(200) // If we have a valid unexpired cookie it's all good to go
-							return
-						}
+	if err == nil {
+		cookie, exists := cookieList[userCookie.Value] // Will get the cookie from the cookieList
+		if exists {                                    // Making sure the cookie exists
+			if cookie.Value == userCookie.Value { // Confirms that we got the right cookie
+				if time.Now().Unix() > cookie.Expires.Unix() { // Making sure the cookie is still edible
+					// In case that the cookie expire we send it back with MaxAge = -1 to inform the browser
+					newCookie := http.Cookie{
+						Secure: true,
+						Name:   "SessionCookie",
+						Value:  userCookie.Value,
+						MaxAge: -1,
 					}
+					delete(cookieList, userCookie.Value) // Delete the cookie from the cookieList
+					http.SetCookie(w, &newCookie)
+				} else {
+					w.WriteHeader(200) // If we have a valid unexpired cookie it's all good to go
+					return
 				}
 			}
 		}
@@ -95,7 +89,7 @@ func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &newCookie)
 		// Add the new cookie to the front of the list as it is very likely to be used immediately
 		// By the very nature of lists things at the end take more time to reach
-		cookieList.PushFront(newCookie)
+		cookieList[newCookie.Value] = newCookie // Add the new cookie to the cookieList
 		w.WriteHeader(200)
 		return
 	} else {
