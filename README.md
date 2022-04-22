@@ -53,6 +53,7 @@ location /auth {
 ```
 9. Add a location for the authentication page
 ```
+# login may conflic with the application behind the proxy so change this to whatever you want, it won't break anything
 location /login {
         proxy_pass http://localhost:3000/static/;
         proxy_set_header X-Original-URI $request_uri;
