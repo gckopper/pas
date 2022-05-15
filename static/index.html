@@ -127,9 +127,9 @@ input {
 <body>
 <div class="container">
     <div class="text">Name: </div>
-    <div class="input"><input type="text" name="username" id="name"/></div>
+    <div class="input"><input type="text" aria-label="username" name="username" id="name"/></div>
     <div class="text">Password: </div>
-    <div class="input"><input type="password" name="password" id="password">
+    <div class="input"><input type="password" aria-label="password" name="password" id="password">
         <svg width="1rem" height="1rem" onclick="show()">
         <circle class="SVG" cx="50%" cy="50%" r="20%"
         fill="transparent" />
@@ -138,7 +138,7 @@ input {
       Sorry, your browser does not support inline SVG.
       </svg></input></div>
     <div class="text">OTP: </div>
-    <div class="input"><input type="text" name="one-time password" id="otp"/></div>
+    <div class="input"><input type="text" aria-label="One-time password" name="one-time password" id="otp"/></div>
     <div class="button"><button type="submit" value="Send" onclick="auth()">Login</button></div>
 </div>
 </body>
