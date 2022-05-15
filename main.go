@@ -38,25 +38,23 @@ func main() {
 func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	userCookie, err := r.Cookie("SessionCookie") // Try to grab the cookie named SessionCookie
 	if err == nil {
-		cookie, exists := cookieList[userCookie.Value] // Will get the cookie from the cookieList
-		if exists {                                    // Making sure the cookie exists
-			if cookie.Value == userCookie.Value { // Confirms that we got the right cookie
-				if time.Now().Unix() > cookie.Expires.Unix() { // Making sure the cookie is still edible
-					// In case that the cookie expire we send it back with MaxAge = -1 to inform the browser
-					newCookie := http.Cookie{
-						Secure: true,
-						Name:   "SessionCookie",
-						Value:  userCookie.Value,
-						MaxAge: -1,
-					}
-					delete(cookieList, userCookie.Value) // Delete the cookie from the cookieList
-					http.SetCookie(w, &newCookie)
-				} else {
-					w.WriteHeader(200) // If we have a valid unexpired cookie it's all good to go
-					return
-				}
+		cookie, exists := cookieList[userCookie.Value]            // Will get the cookie from the cookieList
+		if !exists || time.Now().Unix() > cookie.Expires.Unix() { // Making sure the cookie exists
+			// In case that the cookie expire we send it back with MaxAge = -1 to inform the browser
+			newCookie := http.Cookie{
+				Secure: true,
+				Name:   "SessionCookie",
+				Value:  userCookie.Value,
+				MaxAge: -1,
 			}
+			delete(cookieList, userCookie.Value) // Delete the cookie from the cookieList
+			http.SetCookie(w, &newCookie)
+			w.Write([]byte("Cookie not found or expired")) // If the cookie does not exist, write this to the response
+			w.WriteHeader(403)
+			return
 		}
+		w.WriteHeader(200) // If we have a valid unexpired cookie it's all good to go
+		return
 	}
 	// Grab the authentication headers
 	username := r.Header.Get("Username")
@@ -92,10 +90,8 @@ func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 		cookieList[newCookie.Value] = newCookie // Add the new cookie to the cookieList
 		w.WriteHeader(200)
 		return
-	} else {
-		// Returns Unauthorized for users with no cookie and no credentials
-		// Used by nginx to redirect the user to the login page
-		w.WriteHeader(401)
-		return
 	}
+	// Returns Unauthorized for users with no cookie and no credentials
+	// Used by nginx to redirect the user to the login page
+	w.WriteHeader(401)
 }
