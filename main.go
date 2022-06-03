@@ -1,9 +1,7 @@
 package main
 
 import (
-	"crypto/rand"
 	"embed"
-	"encoding/base32"
 	"flag"
 	"fmt"
 	"log"
@@ -11,6 +9,8 @@ import (
 	"pas/auth"
 	"strconv"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Creating global cookie list for the session cookies
@@ -71,15 +71,11 @@ func authHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	}
 	// Confirm the received valid credentials
 	if auth.GetCredentials(username, password, otp) {
-		id := make([]byte, 64) // Allocate 64 bytes of memory for the id
-		_, err = rand.Read(id) // Get Random values for the id
-		if err != nil {
-			log.Fatal(err)
-		}
+		id := uuid.New() // Allocate 64 bytes of memory for the id
 		newCookie := http.Cookie{
 			Secure:   true,
 			Name:     "SessionCookie",
-			Value:    base32.StdEncoding.EncodeToString(id),
+			Value:    id.String(),
 			MaxAge:   14400,
 			Expires:  time.Now().Add(time.Hour * 4), // Give it 4 hours of life
 			SameSite: http.SameSiteStrictMode,       // Set SameSite to strict as a way of mitigating attacks
