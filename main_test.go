@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -158,30 +157,13 @@ func TestServerTOTPType(t *testing.T) {
 	}
 }
 
-// TestServer tests the authHandlerFunc directly with a TOTP that's not an int
-func TestServerTOTPSize(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(authHandlerFunc)) // Uses a test server
-	defer server.Close()
-	rand.Seed(time.Now().UnixNano())
-	for i := 0; i < 1000; i++ {
-		request, err := http.NewRequest("GET", server.URL, nil) // Creates a request to the test server
-		if err != nil {
-			t.Fatal(err)
+func FuzzGetCred(f *testing.F) {
+	f.Add("a", 232)
+	f.Fuzz(func(t *testing.T, password string, otp int) {
+		if auth.GetCredentials("user", password, otp) {
+			t.Errorf("Broken with: %p and %o", &password, otp)
 		}
-		otp := fmt.Sprint(rand.Int() + 1000000)
-		request.Header = map[string][]string{ // Prepare an authentication header
-			"Username": {"user"},
-			"Password": {"a"},
-			"OTP":      {otp},
-		} // Loads the authentication header
-		response, err := server.Client().Do(request) // Make the request
-		if err != nil {
-			t.Fatal(err)
-		}
-		if response.StatusCode == 200 { // If the authentication is successful the then test fails as the TOTP MUST be a number
-			t.Fatal(otp)
-		}
-	}
+	})
 }
 
 func BenchmarkGetCred(b *testing.B) {
@@ -210,6 +192,7 @@ func BenchmarkGetCredGo(b *testing.B) {
 	 * 2 = otp secret
 	 * 3 = salt used in the password
 	 */
+	b.ResetTimer()
 	for _, v := range records { // Loop through the records
 		if v[0] == username { // Check the username first as it requires no processing
 			// Sends the password in plaintext with the salt to be hashed and compared with our record
