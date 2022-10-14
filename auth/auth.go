@@ -8,25 +8,32 @@ import (
 	"encoding/binary"
 	"encoding/csv"
 	"fmt"
-	"golang.org/x/crypto/scrypt"
 	"os"
 	"strings"
 	"time"
+
+	"golang.org/x/crypto/scrypt"
 )
 
-// GetCredentials function to verify the credentials passed to it
-func GetCredentials(username string, password string, otp int) bool {
-	// A file that we open at runtime is used to allow modifications without the need to restart
+type Credentials struct {
+	saltedHashedPassword string
+	otpSecret            string
+	salt                 string
+}
+
+var users = make(map[string]Credentials)
+
+func init() {
 	file, err := os.Open("users.csv") // Open the file in which the credentials are stored
 	if err != nil {
 		fmt.Println(err)
-		return false
+		return
 	}
 	reader := csv.NewReader(file) // Use the csv library to save some work
 	records, err := reader.ReadAll()
 	if err != nil {
 		fmt.Println(err)
-		return false
+		return
 	}
 	/* The indexes are as follows:
 	 * 0 = username
@@ -34,23 +41,33 @@ func GetCredentials(username string, password string, otp int) bool {
 	 * 2 = otp secret
 	 * 3 = salt used in the password
 	 */
-	for _, v := range records { // Loop through the records
-		if v[0] == username { // Check the username first as it requires no processing
-			// Sends the password in plaintext with the salt to be hashed and compared with our record
-			if Hash(password, v[3]) == v[1] {
-				presentTime := time.Now().Unix()
-				margin := uint64(presentTime % 30)
-				if Totp(v[2], uint64(presentTime/30)) == otp || (margin > 27 && Totp(v[2], uint64((presentTime+5)/30)) == otp) || (margin < 3 && Totp(v[2], uint64((presentTime-5)/30)) == otp) {
-					return true
-				}
-				time.Sleep(1)
-				return false
-			} else { // Immediately return false if we got the wrong password for a valid username
-				return false
-			}
+	for _, v := range records {
+		users[v[0]] = Credentials{
+			saltedHashedPassword: v[1],
+			otpSecret:            v[2],
+			salt:                 v[3],
 		}
 	}
-	return false
+}
+
+// GetCredentials function to verify the credentials passed to it
+func GetCredentials(username string, password string, otp int) bool {
+	credentials, exists := users[username]
+	if !exists {
+		return false
+	}
+	// Sends the password in plaintext with the salt to be hashed and compared with our record
+	if Hash(password, credentials.salt) == credentials.saltedHashedPassword {
+		presentTime := time.Now().Unix()
+		margin := uint64(presentTime % 30)
+		if Totp(credentials.otpSecret, uint64(presentTime/30)) == otp || (margin > 27 && Totp(credentials.otpSecret, uint64((presentTime+5)/30)) == otp) || (margin < 3 && Totp(credentials.otpSecret, uint64((presentTime-5)/30)) == otp) {
+			return true
+		}
+		time.Sleep(1)
+		return false
+	} else { // Immediately return false if we got the wrong password for a valid username
+		return false
+	}
 }
 
 // Hash Receive a password in plaintext and a salt to hash
