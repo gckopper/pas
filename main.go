@@ -60,7 +60,7 @@ func giveCookie(w http.ResponseWriter, userCookie *http.Cookie) {
 		delete(cookieList, userCookie.Value) // Delete the cookie from the cookieList
 		http.SetCookie(w, &newCookie)
 		w.Write([]byte("Cookie not found or expired")) // If the cookie does not exist, write this to the response
-		w.WriteHeader(403)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 	w.WriteHeader(http.StatusOK) // If we have a valid unexpired cookie it's all good to go
@@ -81,24 +81,28 @@ func checkCredentials(w http.ResponseWriter, r *http.Request, userCookie *http.C
 		return
 	}
 	// Confirm the received valid credentials
-	if auth.GetCredentials(username, password, otp) {
-		id := uuid.New() // Allocate 64 bytes of memory for the id
-		newCookie := http.Cookie{
-			Secure:   true,
-			Name:     "SessionCookie",
-			Value:    id.String(),
-			MaxAge:   14400,
-			Expires:  time.Now().Add(time.Hour * 4), // Give it 4 hours of life
-			SameSite: http.SameSiteStrictMode,       // Set SameSite to strict as a way of mitigating attacks
-		}
-		http.SetCookie(w, &newCookie)
-		// Add the new cookie to the front of the list as it is very likely to be used immediately
-		// By the very nature of lists things at the end take more time to reach
-		cookieList[newCookie.Value] = newCookie // Add the new cookie to the cookieList
-		w.WriteHeader(http.StatusOK)
+	if !auth.GetCredentials(username, password, otp) {
+		// Returns Unauthorized for users with no cookie and no credentials
+		// Used by nginx to redirect the user to the login page
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	// Returns Unauthorized for users with no cookie and no credentials
-	// Used by nginx to redirect the user to the login page
-	w.WriteHeader(http.StatusForbidden)
+	createCookie(w)
+	w.WriteHeader(http.StatusOK)
+}
+
+func createCookie(w http.ResponseWriter) {
+	id := uuid.New() // Allocate 64 bytes of memory for the id
+	newCookie := http.Cookie{
+		Secure:   true,
+		Name:     "SessionCookie",
+		Value:    id.String(),
+		MaxAge:   14400,
+		Expires:  time.Now().Add(time.Hour * 4), // Give it 4 hours of life
+		SameSite: http.SameSiteStrictMode,       // Set SameSite to strict as a way of mitigating attacks
+	}
+	http.SetCookie(w, &newCookie)
+	// Add the new cookie to the front of the list as it is very likely to be used immediately
+	// By the very nature of lists things at the end take more time to reach
+	cookieList[newCookie.Value] = newCookie // Add the new cookie to the cookieList
 }
