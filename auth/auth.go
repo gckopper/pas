@@ -24,12 +24,12 @@ type Credentials struct {
 var users = make(map[string]Credentials)
 
 func init() {
-	file, err := os.Open("users.csv") // Open the file in which the credentials are stored
+	file, err := os.Open("users.csv")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	reader := csv.NewReader(file) // Use the csv library to save some work
+	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil {
 		fmt.Println(err)
@@ -56,7 +56,6 @@ func GetCredentials(username string, password string, otp int) bool {
 	if !exists {
 		return false
 	}
-	// Sends the password in plaintext with the salt to be hashed and compared with our record
 	if !(credentials.Hash(password) == credentials.SaltedHashedPassword) {
 		return false
 	}
@@ -77,7 +76,7 @@ func (c Credentials) Hash(password string) string {
 		fmt.Println(err)
 		return ""
 	}
-	return base64.StdEncoding.EncodeToString(key) // Returns the hash as a base64 string
+	return base64.StdEncoding.EncodeToString(key)
 }
 
 func (c Credentials) totpCheck(otp int) bool {
@@ -104,25 +103,20 @@ func (c Credentials) asyncTopt(result chan int, timestamp uint64) {
 // Totp calculates the time-based one time password for a given secret
 // spec definition https://datatracker.ietf.org/doc/html/rfc6238
 func (c Credentials) Totp(timestamp uint64) int {
-	// Convert the string to a byte array making sure it only has upper-case letters
 	secret, err := base32.StdEncoding.DecodeString(strings.ToUpper(c.OtpSecret))
 	if err != nil {
 		fmt.Println(err)
 		return 0
 	}
 	buf := make([]byte, 8)
-	hmacResult := hmac.New(sha1.New, secret)   // Hash the secret as HMAC SHA-1
-	binary.BigEndian.PutUint64(buf, timestamp) // Convert the time into bytes and saves it to buf
-	hmacResult.Write(buf)                      // Adds more data to the running hash.
-	// Sum appends the current hash to b and returns the resulting slice.
-	// It does not change the underlying hash state.
-	// Used here to convert the hash to a byte array
+	hmacResult := hmac.New(sha1.New, secret)
+	binary.BigEndian.PutUint64(buf, timestamp)
+	hmacResult.Write(buf)
 	toTrunc := hmacResult.Sum(nil)
-	// Calculate the offset and then truncates the value as specified in the spec
 	offset := toTrunc[len(toTrunc)-1] & 0xf
 	value := int64(((int(toTrunc[offset]) & 0x7f) << 24) |
 		((int(toTrunc[offset+1] & 0xff)) << 16) |
 		((int(toTrunc[offset+2] & 0xff)) << 8) |
 		(int(toTrunc[offset+3]) & 0xff))
-	return int(value % 1000000) // Return only the 6 least significant digits
+	return int(value % 1000000)
 }
