@@ -1,4 +1,4 @@
-# ATENTION! THIS IS UNMAINTAINED!
+# ATTENTION! THIS IS UNMAINTAINED!
 There is currently a known bug relating to the misusage of a hash map (cookieList) in a cuncurrent context. I'll fix the bug when I have some free time since no one seams to be using this anyway.
 
 # PAS
