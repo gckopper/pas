@@ -1,8 +1,10 @@
-[![Go](https://github.com/gckopper/pas/actions/workflows/go.yml/badge.svg?branch=dev)](https://github.com/gckopper/pas/actions/workflows/go.yml)
+# ATENTION! THIS IS UNMAINTAINED!
+There is currently a known bug relating to the misusage of a hash map (cookieList) in a cuncurrent context. I'll fix the bug when I have some free time since no one seams to be using this anyway.
+
 # PAS
 Personal Authentication Service
 
-This project is supposed to provide a simple server capable of authentication for very small userbases. Thus being only recommended protecting personal applications that are exposed to the web. The main advantage against something more "enterprise ready" is its simplicity, easy of use, easy of deployment and low requirements.
+This project is supposed to provide a simple server capable of authentication for very small userbases. Thus being only recommended protecting self-hosted applications for homelabs and such. The main advantage against something more "enterprise ready" is its simplicity, easy of use, easy of deployment and low requirements.
 
 
 # Demo (Currently offline)
